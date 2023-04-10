@@ -5,6 +5,7 @@
     <style>
         @import url('https://fonts.cdnfonts.com/css/guardian-sans');    
 
+        /* For the trigering of Virtual Keboard */
         * {
             padding :0;
             margin  :0;
@@ -28,7 +29,7 @@
 
         /*Define the style of the hints panel.*/
         .hint {
-            width: 65%;
+            width: 50%;
             height: 400px;
             margin: 20px;
             float: left;
@@ -38,7 +39,7 @@
         #dispAcross, #dispDown {
             float: left;
             background-color: #fff7b2;
-            width: 40%;
+            width: 100%;
         }
 
         /*Define the style of the clue buttons.*/
@@ -74,6 +75,67 @@
         .child_btn_clue:hover, .child_btn_clue:visited, .child_btn_clue:focus {
             background-color: #942f65;
             border-color: #942f65;
+        }
+
+        /* For PC screen */
+        @media screen and (min-width: 1100px){ 
+            /*Define the style of the crossword puzzle.*/
+            #crossWord {
+                margin: 10px;
+                float: left;
+                cursor: text;
+                font-family: 'Guardian Sans', sans-serif;
+            }
+
+            /*Define the style of the hints panel.*/
+            .hint {
+                width: 65%;
+                height: 400px;
+                margin: 20px;
+                float: left;
+            }
+
+            /*Define the style of the display for the across and down clues.*/
+            #dispAcross, #dispDown {
+                float: left;
+                background-color: #fff7b2;
+                width: 40%;
+            }
+
+            /*Define the style of the clue buttons.*/
+            .btn_clue {
+                width: 100%;
+                margin: 20px;
+            }
+
+            /*Define the style of the child buttons for all clues.*/
+            .child_btn {
+                color: #707070;
+                background: #ededed;
+                border: 0.0625rem solid #ededed;
+                height: 1.875rem;
+                padding: 0 0.625rem;
+                margin-right: 0.625rem;
+                margin-left: 0.625rem;
+                margin-bottom: 0.75rem;
+                border-radius: 62.5rem;
+                font-weight: bold;
+            }
+            .child_btn:hover, .child_btn:visited, .child_btn:focus {
+                background-color: #d4d4d4;
+                border-color: #d4d4d4;
+            }
+
+            /*Define the style of the child buttons for specific clue.*/
+            .child_btn_clue {
+                color: #fff;
+                background: #bb3b80;
+                border: 0.0625rem solid #bb3b80;
+            }
+            .child_btn_clue:hover, .child_btn_clue:visited, .child_btn_clue:focus {
+                background-color: #942f65;
+                border-color: #942f65;
+            }
         }
     </style>
 
@@ -124,7 +186,7 @@
                     crossWord.appendChild(text);
                 }
                 // listen for keydown events for navigating the crossword
-                // window.addEventListener('keydown', navigate, true);  //Non-android
+                window.addEventListener('keydown', navigate, true);  //Non-android
                 window.addEventListener('input', navigate, true);            
                 // listen for mouse click events for taking current cell
                 crossWord.addEventListener('mousedown', position, true);
@@ -146,7 +208,6 @@
 
         /*-------------------------------Function to position the player.-----------------------*/
         function position(e) {
-            // alert(cy+" "+cx);
             let tempX = Math.floor(e.offsetX/32);
             let tempY = Math.floor(e.offsetY/32);
             let prevX = cx;
@@ -172,17 +233,14 @@
 
             // Condition: if the clicled cell is same as the previous cell highlighted cell
             if (tempY == prevY && tempX == prevX) {
-                // alert("here1");
                 curRect.setAttribute('fill', '#fff7b2');  // pale yellow color
             }
             // Condition: if the clicled cell is across or down the clue currently highighted 
             else if ((startY == tempY && tempX >= startX && tempX <= endX) || (startX == tempX && tempY >= startY && tempY <= endY)) {
-                // alert("here2");
                 curRect.setAttribute('fill', '#ffe500');  // bright yellow color            
             }
             // Condition: if the clicled cell is not a part of the clue currently highighted
             else { 
-                // alert("here3");
                 clueMarker(e);
             }
         }//End of function position()
@@ -191,7 +249,6 @@
         function navigate(e) {
             let curRect = getRectElem(cy, cx);
             let curTxt = getTxtElem(cy, cx);
-
             // Condition: up arrow
             if (e.keyCode == 38 && cy > 0) { 
                 let nxtRect = getRectElem(cy - 1, cx);
@@ -287,9 +344,8 @@
             // Condition: get character input from keyboard
             else { 
                 let pattern = /^([A-Z])$/gm;    // regular expression for the char
-                // let ch = String.fromCharCode(e.keyCode);
+                // let ch = String.fromCharCode(e.keyCode); //non android
                 let ch = e.target.value.toUpperCase();
-                // alert(ch);
 
                 // satisfies the regx then save else return
                 if (!pattern.test(ch)) { 
@@ -356,12 +412,6 @@
             across = xmlDoc.getElementsByTagName("across")[0];
             clueAcr = across.getElementsByTagName("clue");
 
-            // Set initial coordinates
-            // cy = Number(clueAcr[0].getElementsByTagName("row")[0].childNodes[0].nodeValue);
-            // cx = Number(clueAcr[0].getElementsByTagName("col")[0].childNodes[0].nodeValue);
-            cy = 0;
-            cx = 0;
-
             // Process each 'across' clue and add it to the crossword puzzle grid
             for (let i = 0; i < clueAcr.length; i++) { 
                 let row = clueAcr[i].getElementsByTagName("row")[0]; 
@@ -408,6 +458,20 @@
                     rectElem.setAttribute('fill', 'white');
                     ++tempY; // move to the next row position
                 }
+            }// End of outer for loop
+
+            // Set initial coordinates
+            for (let i = 0; i < 13; i++) {
+                let flag = 0;
+                for (let j = 0; j < 13; j++) {
+                    if (getRectElem(i, j).getAttribute('fill') == "black") {
+                        cy = i;
+                        cx = j;
+                        flag = 1;
+                        break;
+                    }
+                }
+                if (flag == 1) break;
             }// End of outer for loop
         }//End of function process()
 
@@ -958,15 +1022,15 @@
         <button tyte="submit" class="child_btn" onclick="clearAll()">Clear all</button>
     </div>
 
+    <!-- To trigger virtual keyboard -->
     <div style="position: absolute;top:-1000px;left:-1000px">
         <input type="text" id="text">
     </div>
-    <!-- <script>
+    <script>
         document.body.onclick=function() {
             var elem=document.getElementById("text");
-            elem.focus()
-            crossWord.addEventListener('mousedown', position, true);
+            elem.focus();
         };
-    </script> -->
+    </script>
 </body>
 </html>
