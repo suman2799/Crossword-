@@ -1,0 +1,937 @@
+<!--The following HTML code contains a crossword puzzle interface.-->
+<html>
+<head>
+    <!--The following style section contains some CSS rules that are applied to the elements in the HTML page.-->
+    <style>
+        @import url('https://fonts.cdnfonts.com/css/guardian-sans');    
+                
+        h1 {
+            text-align: center;
+        }
+
+        /*Define the style of the crossword puzzle.*/
+        #crossWord {
+            margin: 10px;
+            float: left;
+            cursor: text;
+            font-family: 'Guardian Sans', sans-serif;
+        }
+
+        /*Define the style of the hints panel.*/
+        .hint {
+            width: 65%;
+            height: 400px;
+            margin: 20px;
+            float: left;
+        }
+
+        /*Define the style of the display for the across and down clues.*/
+        #dispAcross, #dispDown {
+            float: left;
+            background-color: #fff7b2;
+            width: 40%;
+        }
+
+        /*Define the style of the clue buttons.*/
+        .btn_clue {
+            width: 100%;
+            margin: 20px;
+        }
+
+        /*Define the style of the child buttons for all clues.*/
+        .child_btn {
+            color: #707070;
+            background: #ededed;
+            border: 0.0625rem solid #ededed;
+            height: 1.875rem;
+            padding: 0 0.625rem;
+            margin-right: 0.625rem;
+            margin-left: 0.625rem;
+            margin-bottom: 0.75rem;
+            border-radius: 62.5rem;
+            font-weight: bold;
+        }
+        .child_btn:hover, .child_btn:visited, .child_btn:focus {
+            background-color: #d4d4d4;
+            border-color: #d4d4d4;
+        }
+
+        /*Define the style of the child buttons for specific clue.*/
+        .child_btn_clue {
+            color: #fff;
+            background: #bb3b80;
+            border: 0.0625rem solid #bb3b80;
+        }
+        .child_btn_clue:hover, .child_btn_clue:visited, .child_btn_clue:focus {
+            background-color: #942f65;
+            border-color: #942f65;
+        }
+    </style>
+
+    <script>
+        var cx, cy;
+        var xmlDoc;
+        var across, clueAcr, down, clueDwn;
+        var startX, startY, endX, endY;
+        var acrossFlag = 0, downFlag = 0;
+
+        /*-------------------This function is executed when the page loads.---------------------*/
+        function init() {
+            /*Get the crossword puzzle SVG element.*/
+            crossWord = document.getElementById("crossWord");
+            /*Loop through all the cells in the crossword puzzle and add SVG elements to them.*/
+            for (let i = 0; i < 16; i++)
+                for (let j = 0; j < 16; j++) {
+                    let rectId = i*16+j;
+
+                    /*Create a rectangle cell and set its attributes.*/
+                    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                    rect.setAttribute('x', j*32);
+                    rect.setAttribute('y', i*32);
+                    rect.setAttribute('height', '32');
+                    rect.setAttribute('width', '32');
+                    rect.setAttribute('id', rectId.toString());
+                    rect.setAttribute('stroke', 'black');
+                    rect.setAttribute('fill', 'black');
+                    /*Append the rectangle cell to the crossword puzzle SVG element.*/
+                    crossWord.appendChild(rect);
+
+                    /*Create a marker and set its attributes.*/
+                    const mark = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    mark.setAttribute('x', j*32+1);
+                    mark.setAttribute('y', i*32+9);
+                    mark.setAttribute('font-size', '0.600rem');
+                    mark.setAttribute('id', "mark"+rectId.toString());
+                    /*Append the marker to the crossword puzzle SVG element.*/
+                    crossWord.appendChild(mark);
+
+                    /*Create a text element and set its attributes.*/
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', j*32+11);
+                    text.setAttribute('y', i*32+21);
+                    text.setAttribute('font-size', '0.89375rem');
+                    text.setAttribute('id', "text"+rectId.toString());
+                    /*Append the text element to the crossword puzzle SVG element.*/
+                    crossWord.appendChild(text);
+                }
+                // listen for keydown events for navigating the crossword
+                window.addEventListener('keydown', navigate, true);
+                // listen for mouse click events for taking current cell
+                crossWord.addEventListener('mousedown', position, true);
+        }//End of function init()
+
+        /*---------------Returns the Rectangle cell of the given coordinates.-------------------*/
+        function getRectElem(x, y) {
+            let rectId = x * 16 + y;
+            let rectElem = document.getElementById(rectId.toString());
+            return rectElem;
+        }//End of function getRectElem()
+        
+        /*--------------------Returns the text cell of the given coordinates.-------------------*/
+        function getTxtElem(x, y) {
+            let txtId = x * 16 + y;
+            let txtElem = document.getElementById("text"+txtId.toString());
+            return txtElem;
+        }//End of function getTxtElem()
+
+        /*-------------------------------Function to position the player.-----------------------*/
+        function position(e) {
+            let tempX = Math.floor(e.offsetX/32);
+            let tempY = Math.floor(e.offsetY/32);
+            let prevX = cx;
+            let prevY = cy;
+            
+            // if the clicked cell is black, move not allowed
+            if (getRectElem(tempY, tempX).getAttribute('fill') == "black") return;
+            
+            // set current rectangle stroke and font-weight to none
+            let curRect = getRectElem(cy, cx);
+            curRect.setAttribute('stroke-width', 'none');
+            let curTxt = getTxtElem(cy, cx);
+            curTxt.setAttribute('font-weight', 'none'); 
+            // set current rectangle coordinates to newly clicked position
+            cx = Math.floor(e.offsetX/32);
+            cy = Math.floor(e.offsetY/32);
+            // set new rectangle stroke and font-weight to highlight
+            let nxtRect = getRectElem(cy, cx);
+            nxtRect.setAttribute('stroke-width', '3');
+            nxtRect.setAttribute('fill', '#fff7b2');    // pale yellow color
+            let nxtTxt = getTxtElem(cy, cx);
+            nxtTxt.setAttribute('font-weight', '800');
+
+            // Condition: if the clicled cell is same as the previous cell highlighted cell
+            if (tempY == prevY && tempX == prevX) {
+                curRect.setAttribute('fill', '#fff7b2');  // pale yellow color
+            }
+            // Condition: if the clicled cell is across or down the clue currently highighted 
+            else if ((startY == tempY && tempX >= startX && tempX <= endX) || (startX == tempX && tempY >= startY && tempY <= endY)) {
+                curRect.setAttribute('fill', '#ffe500');  // bright yellow color            
+            }
+            // Condition: if the clicled cell is not a part of the clue currently highighted
+            else clueMarker(e);
+        }//End of function position()
+
+        /*----------------Moves the yellow highlight(current cell) to the next cell based on the pressed key.--------------*/
+        function navigate(e) {
+            let curRect = getRectElem(cy, cx);
+            let curTxt = getTxtElem(cy, cx);
+
+            // Condition: up arrow
+            if (e.keyCode == 38 && cy > 0) { 
+                let nxtRect = getRectElem(cy - 1, cx);
+                let nxtTxt = getTxtElem(cy - 1, cx);
+
+                if (nxtRect.getAttribute('fill') != "black") {
+                    // set current cell stroke and font-weight to none
+                    curRect.setAttribute('stroke-width', 'none');
+                    curTxt.setAttribute('font-weight', 'none'); 
+                    --cy;   // move to previous row
+                    // set next cell fill, stroke and font-weight to highlight
+                    nxtRect.setAttribute('stroke-width', '3');
+                    nxtRect.setAttribute('fill', '#fff7b2');     // pale yellow color
+                    nxtTxt.setAttribute('font-weight', '800');
+
+                    // if the current highlighted clue is updown
+                    if (downFlag == 1) {
+                        curRect.setAttribute('fill', '#ffe500');  // bright yellow color   
+                    } 
+                    // if the current highlighted clue is across
+                    else clueMarker(e);
+                }
+            } 
+            // Condition: down arrow
+            else if (e.keyCode == 40) { 
+                let nxtRect = getRectElem(cy + 1, cx);
+                let nxtTxt = getTxtElem(cy + 1, cx);
+
+                if (nxtRect.getAttribute('fill') != "black") {
+                    // set current cell stroke and font-weight to none
+                    curRect.setAttribute('stroke-width', 'none');
+                    curTxt.setAttribute('font-weight', 'none'); 
+                    ++cy;   // move to next row
+                    // set next cell fill, stroke and font-weight to highlight
+                    nxtRect.setAttribute('stroke-width', '3');
+                    nxtRect.setAttribute('fill', '#fff7b2');
+                    nxtTxt.setAttribute('font-weight', '800');
+
+                    // if the current highlighted clue is updown
+                    if (downFlag == 1) {
+                        curRect.setAttribute('fill', '#ffe500');  // bright yellow color
+                    } 
+                    // if the current highlighted clue is across
+                    else clueMarker(e);
+                }
+            } 
+            // Condition: left arrow
+            else if (e.keyCode == 37 && cx > 0) { 
+                let nxtRect = getRectElem(cy, cx - 1);
+                let nxtTxt = getTxtElem(cy, cx - 1);
+
+                if (nxtRect.getAttribute('fill') != "black") {
+                    // set current cell stroke and font-weight to none
+                    curRect.setAttribute('stroke-width', 'none');
+                    curTxt.setAttribute('font-weight', 'none'); 
+                    --cx;   // move to previous column
+                    // set next cell fill, stroke and font-weight to highlight
+                    nxtRect.setAttribute('stroke-width', '3');
+                    nxtRect.setAttribute('fill', '#fff7b2'); 
+                    nxtTxt.setAttribute('font-weight', '800');
+
+                    // if the current highlighted clue is across
+                    if (acrossFlag == 1) {
+                        curRect.setAttribute('fill', '#ffe500');  // bright yellow color
+                    } 
+                    // if the current highlighted clue is updown
+                    else clueMarker(e);
+                }
+            } 
+            // Condition: right arrow
+            else if (e.keyCode == 39) {
+                let nxtRect = getRectElem(cy, cx + 1);
+                let nxtTxt = getTxtElem(cy, cx + 1);
+
+                if (nxtRect.getAttribute('fill') != "black") {
+                    // set current cell stroke and font-weight to none
+                    curRect.setAttribute('stroke-width', 'none');
+                    curTxt.setAttribute('font-weight', 'none');
+                    ++cx;   // move to next column
+                    // set next cell fill, stroke and font-weight to highlight
+                    nxtRect.setAttribute('stroke-width', '3');
+                    nxtRect.setAttribute('fill', '#fff7b2');
+                    nxtTxt.setAttribute('font-weight', '800');
+
+                    // if the current highlighted clue is across
+                    if (acrossFlag == 1) {
+                        curRect.setAttribute('fill', '#ffe500');  // bright yellow color
+                    } 
+                    // if the current highlighted clue is updown
+                    else clueMarker(e);
+                }
+            }
+            // Condition: get character input from keyboard
+            else { 
+                let pattern = /^([A-Z])$/gm;    // regular expression for the char
+                let ch = String.fromCharCode(e.keyCode);
+
+                // satisfies the regx then save else return
+                if (!pattern.test(ch)) return;
+                else curTxt.innerHTML = ch;
+
+                // if the current highlighted clue is across
+                if (acrossFlag == 1) {
+                    let nxtRect = getRectElem(cy, cx + 1);    
+                    let nxtTxt = getTxtElem(cy, cx + 1);            
+                    if (nxtRect.getAttribute('fill') != "black") {
+                        // set current cell fill, stroke and font-weight to none
+                        curRect.setAttribute('stroke-width', 'none');
+                        curRect.setAttribute('fill', '#ffe500');
+                        curTxt.setAttribute('font-weight', 'none'); 
+                        ++cx;   // move to next column
+                        // set next cell fill, stroke and font-weight to highlight
+                        nxtRect.setAttribute('stroke-width', '3');
+                        nxtRect.setAttribute('fill', '#fff7b2');
+                        nxtTxt.setAttribute('font-weight', '800');
+                    }
+                }
+                // if the current highlighted clue is updown
+                else {
+                    let nxtRect = getRectElem(cy + 1, cx);  
+                    let nxtTxt = getTxtElem(cy + 1, cx); 
+                    if (nxtRect.getAttribute('fill') != "black") {
+                        // set current cell fill, stroke and font-weight to none
+                        curRect.setAttribute('stroke-width', 'none');
+                        curRect.setAttribute('fill', '#ffe500');
+                        curTxt.setAttribute('font-weight', 'none'); 
+                        ++cy;   // move to next row
+                        // set next cell fill, stroke and font-weight to highlight
+                        nxtRect.setAttribute('stroke-width', '3');
+                        nxtRect.setAttribute('fill', '#fff7b2');
+                        nxtTxt.setAttribute('font-weight', '800');
+                    }
+                }
+            }//End of outer if-else
+        }//End of function navigate()
+
+        /*--------------Function to load an XML file containing the crossword data.-------------*/
+        function loadXML() {
+            let xml = new XMLHttpRequest();
+            xml.onreadystatechange = function() {
+                //If the readyState is 4 (request finished and response is ready) and the status is 200 (OK)
+                if (xml.readyState == 4 && xml.status == 200) {
+                    //Store the responseXML in xmlDoc and call the process() function
+                    xmlDoc = xml.responseXML;
+                    process();
+                }
+            }; 
+            //Open the XMLHttpRequest and specify the URL of the crossword XML file
+            xml.open("GET", "crossword.xml", true);
+            xml.send(null);
+        }//End of function loadXML()
+ 
+        /*------------------This function lays-out the crossword from XML file.-----------------*/
+        function process() {
+            // Get the 'across' clues and store them in an array
+            across = xmlDoc.getElementsByTagName("across")[0];
+            clueAcr = across.getElementsByTagName("clue");
+
+            // Set initial coordinates
+            cy = Number(clueAcr[0].getElementsByTagName("row")[0].childNodes[0].nodeValue);
+            cx = Number(clueAcr[0].getElementsByTagName("col")[0].childNodes[0].nodeValue);
+
+            // Process each 'across' clue and add it to the crossword puzzle grid
+            for (let i = 0; i < clueAcr.length; i++) { 
+                let row = clueAcr[i].getElementsByTagName("row")[0]; 
+                tempY = Number(row.childNodes[0].nodeValue); 
+                let col = clueAcr[i].getElementsByTagName("col")[0]; 
+                tempX = Number(col.childNodes[0].nodeValue);
+
+                // Add the clue number to the crossword puzzle grid
+                let number = clueAcr[i].getElementsByTagName("number")[0]; 
+                let markId = tempY*16+tempX; 
+                let markElem = document.getElementById("mark"+markId.toString());
+                markElem.innerHTML = Number(number.childNodes[0].nodeValue); 
+
+                /* Add hint character and white cells to the crossword puzzle grid */
+                let ans = clueAcr[i].getElementsByTagName("ans")[0]; 
+                for (let j = 0; j < ans.childNodes[0].nodeValue.length; j++) { 
+                    let rectElem = getRectElem(tempY, tempX); 
+                    rectElem.setAttribute('fill', 'white');
+                    ++tempX; // move to the next column position
+                }
+            }// End of outer for loop
+
+            // Get the 'updown' clues and store them in an array
+            down = xmlDoc.getElementsByTagName("updown")[0];
+            clueDwn = down.getElementsByTagName("clue");
+
+            // Process each 'updown' clue and add it to the crossword puzzle grid
+            for (let i = 0; i < clueDwn.length; i++) {
+                let row = clueDwn[i].getElementsByTagName("row")[0];
+                tempY = Number(row.childNodes[0].nodeValue);
+                let col = clueDwn[i].getElementsByTagName("col")[0];
+                tempX = Number(col.childNodes[0].nodeValue);
+
+                // Add the clue number to the crossword puzzle grid
+                let number = clueDwn[i].getElementsByTagName("number")[0];
+                let markId = tempY*16+tempX;
+                let marKElem = document.getElementById("mark"+markId.toString());
+                marKElem.innerHTML = Number(number.childNodes[0].nodeValue);
+
+                /* Add hint character and white cells to the crossword puzzle grid */
+                let ans = clueDwn[i].getElementsByTagName("ans")[0];
+                for (let j = 0; j < ans.childNodes[0].nodeValue.length; j++) {
+                    let rectElem = getRectElem(tempY, tempX);
+                    rectElem.setAttribute('fill', 'white');
+                    ++tempY; // move to the next row position
+                }
+            }// End of outer for loop
+        }//End of function process()
+
+        /*------------------Function to get clue if the given cell has a marker.----------------*/
+        function clueMarker(e) {
+            var divAcr = document.getElementById("dispAcross");
+            var divDwn = document.getElementById("dispDown");
+            let acr = "";
+            let dwn = "";
+            let acrossClueFlag = 0; // Set if the marker is across clue
+            let downClueFlag = 0;   // Set if the marker is down clue
+            acrossFlag = 0; // Set if the current highlighted clue is across clue
+            downFlag = 0;   // Set if the current highlighted clue is down clue
+
+            //Remove highlight from previous clue if any
+            for (let i = startY; i <= endY; i++) 
+                for (let j = startX; j <= endX; j++) 
+                    if (i != cy || j != cx) {
+                        let rectElem = getRectElem(i, j);
+                        rectElem.setAttribute('fill', 'white');
+                    }
+
+            // Process each 'across' clue and add it to the crossword puzzle grid
+            for (let i = 0; i < clueAcr.length; i++) {
+                let row = clueAcr[i].getElementsByTagName("row")[0];
+                let rowVal = Number(row.childNodes[0].nodeValue);
+                let col = clueAcr[i].getElementsByTagName("col")[0];
+                let colVal = Number(col.childNodes[0].nodeValue);
+                let ans = clueAcr[i].getElementsByTagName("ans")[0];
+
+                // if current cell has a marker equal to this clue, get clue details
+                if (cy == rowVal && cx == colVal) {
+                    let txt = clueAcr[i].getElementsByTagName("text")[0];
+                    let num = clueAcr[i].getElementsByTagName("number")[0];
+                    let len = clueAcr[i].getElementsByTagName("length")[0];
+                    acr = "<hr>ACROSS<hr>".bold()+num.childNodes[0].nodeValue+" "+txt.childNodes[0].nodeValue+" ("+len.childNodes[0].nodeValue+")<br><br>";
+                    
+                    let tempX = colVal + 1;
+                    // Highlight the across clue
+                    for (let j = 0; j < ans.childNodes[0].nodeValue.length-1; j++) {
+                        let rectElem = getRectElem(rowVal, tempX);
+                        rectElem.setAttribute('fill', '#ffe500');   // bright yellow color
+                        ++tempX;
+                    }
+                    // Set acrossClueFlag to 1, meaning the marker is an across clue
+                    acrossClueFlag = 1;
+                    // Set acrossFlag to 1, meaning the current highlighted clue is an across clue
+                    acrossFlag = 1;
+                    // Set start and end coordinates of the highlighted clue
+                    startY = rowVal;
+                    startX = colVal;
+                    endX = tempX-1;
+                    endY = cy;
+                    break;
+                }
+            }// End of outer for loop
+            divAcr.innerHTML = acr;
+            divDwn.innerHTML = dwn;
+
+            // Return if clue found in across clues array
+            if (acrossClueFlag == 1) return;
+
+            // Process each 'updown' clue and add it to the crossword puzzle grid
+            for (let i = 0; i <clueDwn.length; i++) {
+                let row = clueDwn[i].getElementsByTagName("row")[0];
+                let rowVal = Number(row.childNodes[0].nodeValue);
+                let col = clueDwn[i].getElementsByTagName("col")[0];
+                let colVal = Number(col.childNodes[0].nodeValue);
+                let ans = clueDwn[i].getElementsByTagName("ans")[0];
+
+                // if current cell has a marker equal to this clue, get clue details
+                if (cy == rowVal && cx == colVal) {
+                    let txt = clueDwn[i].getElementsByTagName("text")[0];
+                    let num = clueDwn[i].getElementsByTagName("number")[0];
+                    let len = clueDwn[i].getElementsByTagName("length")[0];
+                    dwn = "<hr>DOWN<hr>".bold()+num.childNodes[0].nodeValue+" "+txt.childNodes[0].nodeValue+" ("+len.childNodes[0].nodeValue+")<br><br>";
+                
+                    let tempY = rowVal + 1;
+                    // Highlight the down clue
+                    for (let j = 0; j < ans.childNodes[0].nodeValue.length-1; j++) {
+                        let rectElem = getRectElem(tempY, cx);
+                        rectElem.setAttribute('fill', '#ffe500');   // bright yellow color
+                        ++tempY;
+                    }
+                    // Set downClueFlag to 1, meaning the marker is an down clue
+                    downClueFlag = 1;
+                    // Set downFlag to 1, meaning the current highlighted clue is an down clue
+                    downFlag = 1;
+                    // Set start and end coordinates of the highlighted clue
+                    startY = rowVal;
+                    startX = colVal;
+                    endX = cx;
+                    endY = tempY-1;
+                    break;
+                }
+            }// End of outer for loop
+            divAcr.innerHTML = acr;
+            divDwn.innerHTML = dwn;
+
+            // Return if clue found in down clues array, else determine clue from coordinates
+            if (downClueFlag == 1) return;
+            else clueNoMarker(e);
+        }//End of function clueMarker()
+
+        /*----------------Function to get clue if the given cell has a no marker.---------------*/
+        function clueNoMarker(e) {
+            var divAcr = document.getElementById("dispAcross");
+            var divDwn = document.getElementById("dispDown");
+            let acr = "";
+            let dwn = "";
+            let acrossClueFlag = 0; // Set if the marker is across clue
+            let downClueFlag = 0;   // Set if the marker is down clue
+            acrossFlag = 0; // Set if the current highlighted clue is across clue
+            downFlag = 0;   // Set if the current highlighted clue is down clue
+
+            //Remove highlight from previous clue if any
+            for (let i = startY; i <= endY; i++) 
+                for (let j = startX; j <= endX; j++) 
+                    if (i != cy || j != cx) {
+                        let rectElem = getRectElem(i, j);
+                        rectElem.setAttribute('fill', 'white');
+                    }
+
+            // Process each 'across' clue and add it to the crossword puzzle grid
+            for (let i = 0; i < clueAcr.length; i++) {
+                let row = clueAcr[i].getElementsByTagName("row")[0];
+                let rowVal = Number(row.childNodes[0].nodeValue);
+                let col = clueAcr[i].getElementsByTagName("col")[0];
+                let colVal = Number(col.childNodes[0].nodeValue);
+                let ans = clueAcr[i].getElementsByTagName("ans")[0];
+
+                let flag = 0;
+                // Check if the current cell lies within the clue range, if yes set flag to 1
+                for (let j = colVal; j < colVal+ans.childNodes[0].nodeValue.length; j++) {
+                    if (j == cx) {
+                        flag = 1;
+                        break;
+                    }
+                }
+                
+                // if current cell lies within this clue, get clue details
+                if (cy == rowVal && flag == 1) {
+                    let txt = clueAcr[i].getElementsByTagName("text")[0];
+                    let num = clueAcr[i].getElementsByTagName("number")[0];
+                    let len = clueAcr[i].getElementsByTagName("length")[0];
+                    acr = "<hr>ACROSS<hr>".bold()+num.childNodes[0].nodeValue+" "+txt.childNodes[0].nodeValue+" ("+len.childNodes[0].nodeValue+")<br><br>";
+                
+                    let tempX = colVal;
+                    // Highlight the across clue
+                    for (let j = 0; j < ans.childNodes[0].nodeValue.length; j++) {
+                        if (tempX != cx) { // avoid the current cell
+                            let rectElem = getRectElem(rowVal, tempX);
+                            rectElem.setAttribute('fill', '#ffe500');   // bright yellow color
+                        }
+                        ++tempX;
+                    }
+                    // Set acrossClueFlag to 1, meaning the marker is an across clue
+                    acrossClueFlag = 1;
+                    // Set acrossFlag to 1, meaning the current highlighted clue is an across clue
+                    acrossFlag = 1;
+                    // Set start and end coordinates of the highlighted clue
+                    startY = rowVal;
+                    startX = colVal;
+                    endX = tempX-1;
+                    endY = cy;
+                    break;
+                }
+            }// End of outer for loop
+            divAcr.innerHTML = acr;
+            divDwn.innerHTML = dwn;
+
+            // Return if clue found in across clues array
+            if (acrossClueFlag == 1) return;
+
+            // Process each 'updown' clue and add it to the crossword puzzle grid
+            for (let i = 0; i <clueDwn.length; i++) {
+                let row = clueDwn[i].getElementsByTagName("row")[0];
+                let rowVal = Number(row.childNodes[0].nodeValue);
+                let col = clueDwn[i].getElementsByTagName("col")[0];
+                let colVal = Number(col.childNodes[0].nodeValue);
+                let ans = clueDwn[i].getElementsByTagName("ans")[0];
+                
+                let flag = 0;
+                // Check if the current cell lies within the clue range, if yes set flag to 1
+                for (let j = rowVal; j < rowVal+ans.childNodes[0].nodeValue.length; j++) {
+                    if (j == cy) {
+                        flag = 1;
+                        break;
+                    }
+                }
+                
+                // if current cell lies within this clue, get clue details
+                if (cx == colVal && flag == 1) {
+                    let txt = clueDwn[i].getElementsByTagName("text")[0];
+                    let num = clueDwn[i].getElementsByTagName("number")[0];
+                    let len = clueDwn[i].getElementsByTagName("length")[0];
+                    dwn = "<hr>DOWN<hr>".bold()+num.childNodes[0].nodeValue+" "+txt.childNodes[0].nodeValue+" ("+len.childNodes[0].nodeValue+")<br><br>";
+                
+                    let tempY = rowVal;
+                    // Highlight the across clue
+                    for (let j = 0; j < ans.childNodes[0].nodeValue.length; j++) {
+                        if (tempY != cy) { // avoid the current cell
+                            let rectElem = getRectElem(tempY, cx);
+                            rectElem.setAttribute('fill', '#ffe500');  // bright yellow color
+                        }
+                        ++tempY;
+                    }
+                    // Set downClueFlag to 1, meaning the marker is an down clue
+                    downClueFlag = 1;
+                    // Set downFlag to 1, meaning the current highlighted clue is an down clue
+                    downFlag = 1;
+                    // Set start and end coordinates of the highlighted clue
+                    startY = rowVal;
+                    startX = colVal;
+                    endX = cx;
+                    endY = tempY-1;
+                    break;
+                }
+            }// End of outer for loop
+            divAcr.innerHTML = acr;
+            divDwn.innerHTML = dwn;
+            
+            return;
+        }//End of function clueNoMarker() 
+
+        /*------------------------Function to check the current clue only.----------------------*/
+        function checkClue() {
+            // Condition: current highlighted clues is across clue
+            if (acrossFlag == 1) {
+                // Process each 'across' clue
+                for (let i = 0; i < clueAcr.length; i++) {
+                    let row = clueAcr[i].getElementsByTagName("row")[0];
+                    let rowVal = Number(row.childNodes[0].nodeValue);
+                    let col = clueAcr[i].getElementsByTagName("col")[0];
+                    let colVal = Number(col.childNodes[0].nodeValue);
+
+                    // If the current clue start coordinates match, get clue answer
+                    if (startY == rowVal && startX == colVal) {
+                        let tempX = startX;
+                        let tempY = startY;
+                        let ans = clueAcr[i].getElementsByTagName("ans")[0];
+
+                        // Check clue answer characters with cells
+                        for (let j = 0; j < ans.childNodes[0].nodeValue.length; j++) {
+                            let txtElem = getTxtElem(tempY, tempX);                            
+                            // If the letter in the crossword grid doesn't match the answer, set char to ' '
+                            if (txtElem.innerHTML != ans.childNodes[0].nodeValue.charAt(j)) {
+                                txtElem.innerHTML = ' ';
+                            }
+                            ++tempX; // move to the next column position
+                        }
+                        break;
+                    }
+                }//End of outer for loop
+            }
+            // Condition: current highlighted clues is down clue
+            else {
+                // Process each 'down' clue
+                for (let i = 0; i < clueDwn.length; i++) {
+                    let row = clueDwn[i].getElementsByTagName("row")[0];
+                    let rowVal = Number(row.childNodes[0].nodeValue);
+                    let col = clueDwn[i].getElementsByTagName("col")[0];
+                    let colVal = Number(col.childNodes[0].nodeValue);
+
+                    // If the current clue start coordinates match, get clue answer
+                    if (startY == rowVal && startX == colVal) {
+                        let tempX = startX;
+                        let tempY = startY;
+                        let ans = clueDwn[i].getElementsByTagName("ans")[0];
+
+                        // Check clue answer characters with cells
+                        for (let j = 0; j < ans.childNodes[0].nodeValue.length; j++) {
+                            let txtElem = getTxtElem(tempY, tempX);                            
+                            // If the letter in the crossword grid doesn't match the answer, set char to ' '
+                            if (txtElem.innerHTML != ans.childNodes[0].nodeValue.charAt(j)) {
+                                txtElem.innerHTML = ' ';
+                            }
+                            ++tempY; // move to the next row position
+                        }
+                        break;
+                    }
+                }//End of outer for loop
+            }
+        }//End of clearClue()
+
+        /*-----------------------Function to reveal the current clue only.----------------------*/
+        function revealClue() {
+            // Condition: current highlighted clues is across clue
+            if (acrossFlag == 1) {
+                // Process each 'across' clue
+                for (let i = 0; i < clueAcr.length; i++) {
+                    let row = clueAcr[i].getElementsByTagName("row")[0];
+                    let rowVal = Number(row.childNodes[0].nodeValue);
+                    let col = clueAcr[i].getElementsByTagName("col")[0];
+                    let colVal = Number(col.childNodes[0].nodeValue);
+
+                    // If the current clue start coordinates match, get clue answer
+                    if (startY == rowVal && startX == colVal) {
+                        let tempX = startX;
+                        let tempY = startY;
+                        let ans = clueAcr[i].getElementsByTagName("ans")[0];
+
+                        // Get clue answer characters into cells
+                        for (let j = 0; j < ans.childNodes[0].nodeValue.length; j++) {
+                            let txtElem = getTxtElem(tempY, tempX);                            
+                            // Set the clue character in the cell
+                            txtElem.innerHTML = ans.childNodes[0].nodeValue.charAt(j);
+                            ++tempX; // move to the next column position
+                        }
+                        break;
+                    }
+                }//End of outer for loop
+            }
+            // Condition: current highlighted clues is down clue
+            else {
+                // Process each 'down' clue
+                for (let i = 0; i < clueDwn.length; i++) {
+                    let row = clueDwn[i].getElementsByTagName("row")[0];
+                    let col = clueDwn[i].getElementsByTagName("col")[0];
+                    let rowVal = Number(row.childNodes[0].nodeValue);
+                    let colVal = Number(col.childNodes[0].nodeValue);
+
+                    // If the current clue start coordinates match, get clue answer
+                    if (startY == rowVal && startX == colVal) {
+                        let tempX = startX;
+                        let tempY = startY;
+                        let ans = clueDwn[i].getElementsByTagName("ans")[0];
+
+                        // Get clue answer characters into cells
+                        for (let j = 0; j < ans.childNodes[0].nodeValue.length; j++) {
+                            let txtElem = getTxtElem(tempY, tempX);                            
+                            // Set the clue character in the cell
+                            txtElem.innerHTML = ans.childNodes[0].nodeValue.charAt(j);
+                            ++tempY; // move to the next row position
+                        }
+                        break;
+                    }
+                }//End of outer for loop
+            }
+        }//End of function revealAll()
+
+        /*-----------------------Function to clear the current clue only.-----------------------*/
+        function clearClue() {
+            // Condition: current highlighted clues is across clue
+            if (acrossFlag == 1) {
+                // Process each 'across' clue
+                for (let i = 0; i < clueAcr.length; i++) {
+                    let row = clueAcr[i].getElementsByTagName("row")[0];
+                    let rowVal = Number(row.childNodes[0].nodeValue);
+                    let col = clueAcr[i].getElementsByTagName("col")[0];
+                    let colVal = Number(col.childNodes[0].nodeValue);
+
+                    // If the current clue start coordinates match, clear the clue
+                    if (startY == rowVal && startX == colVal) {
+                        let tempX = startX;
+                        let tempY = startY;
+                        let ans = clueAcr[i].getElementsByTagName("ans")[0];
+                        
+                        // Clear clue answer characters from cells
+                        for (let j = 0; j < ans.childNodes[0].nodeValue.length; j++) {
+                            let txtElem = getTxtElem(tempY, tempX);                            
+                            // Set ' ' in the cell
+                            txtElem.innerHTML = ' ';
+                            ++tempX; // move to the next column position
+                        }
+                        break;
+                    }
+                }//End of outer for loop
+            }
+            // Condition: current highlighted clues is down clue
+            else {
+                // Process each 'down' clue
+                for (let i = 0; i < clueDwn.length; i++) {
+                    let row = clueDwn[i].getElementsByTagName("row")[0];
+                    let col = clueDwn[i].getElementsByTagName("col")[0];
+                    let rowVal = Number(row.childNodes[0].nodeValue);
+                    let colVal = Number(col.childNodes[0].nodeValue);
+
+                    if (startY == rowVal && startX == colVal) {
+                        let tempX = startX;
+                        let tempY = startY;
+                        let ans = clueDwn[i].getElementsByTagName("ans")[0];
+
+                        // If the current clue start coordinates match, get clue answer
+                        for (let j = 0; j < ans.childNodes[0].nodeValue.length; j++) {
+                            let txtElem = getTxtElem(tempY, tempX);                            
+                            // Set the clue character in the cell
+                            txtElem.innerHTML = ' ';
+                            ++tempY; // move to the next row position
+                        }
+                        break;
+                    }
+                }//End of outer for loop
+            }
+        }//End of function clearClue()
+
+        /*-------------The function checks the result of the submitted crossword.---------------*/
+        function checkAll() {
+            // Ask confirmation to check all, if false then return
+            if (!confirm("Confirm check all.")) return;
+
+            // Check all across clues
+            for (let i = 0; i < clueAcr.length; i++) {
+                let row = clueAcr[i].getElementsByTagName("row")[0];
+                tempY = Number(row.childNodes[0].nodeValue);
+                let col = clueAcr[i].getElementsByTagName("col")[0];
+                tempX = Number(col.childNodes[0].nodeValue);
+                let ans = clueAcr[i].getElementsByTagName("ans")[0];
+
+                // Loop through each character of the answer and check if it matches the corresponding letter in the crossword grid
+                for (let j = 0; j < ans.childNodes[0].nodeValue.length; j++) {
+                    let txtElem = getTxtElem(tempY, tempX);
+                    // If the letter in the crossword grid doesn't match the answer, set char to ' '
+                    if (txtElem.innerHTML != ans.childNodes[0].nodeValue.charAt(j)) {
+                        txtElem.innerHTML = ' ';
+                    }
+                    ++tempX; // move to the next column position
+                }
+            }//End of outer for loop
+
+            // Check all down clues
+            for (let i = 0; i < clueDwn.length; i++) {
+                let row = clueDwn[i].getElementsByTagName("row")[0];
+                let col = clueDwn[i].getElementsByTagName("col")[0];
+                tempY = Number(row.childNodes[0].nodeValue);
+                tempX = Number(col.childNodes[0].nodeValue);
+                let ans = clueDwn[i].getElementsByTagName("ans")[0];
+
+                // Loop through each character of the answer and check if it matches the corresponding letter in the crossword grid
+                for (let j = 0; j < ans.childNodes[0].nodeValue.length; j++) {
+                    let txtElem = getTxtElem(tempY, tempX);
+                    // If the letter in the crossword grid doesn't match the answer, set char to ' '
+                    if (txtElem.innerHTML != ans.childNodes[0].nodeValue.charAt(j)) {
+                        txtElem.innerHTML = ' ';
+                    }
+                    ++tempY;
+                }
+            }//End of outer for loop
+        }//End of function checkAll()
+
+        /*-------------The function reveals the result of the submitted crossword.--------------*/
+        function revealAll() {
+            // Ask confirmation to reveal all, if false then return
+            if (!confirm("Confirm reveal all.")) return;
+
+            // Process each 'across' clue and add it to the crossword puzzle grid
+            for (let i = 0; i < clueAcr.length; i++) { 
+                let row = clueAcr[i].getElementsByTagName("row")[0]; 
+                tempY = Number(row.childNodes[0].nodeValue); 
+                let col = clueAcr[i].getElementsByTagName("col")[0]; 
+                tempX = Number(col.childNodes[0].nodeValue);
+
+                /* Add across answers to crossword puzzle grid */
+                let ans = clueAcr[i].getElementsByTagName("ans")[0]; 
+                for (let j = 0; j < ans.childNodes[0].nodeValue.length; j++) { 
+                    //Put across values
+                    let txtElem = getTxtElem(tempY, tempX);
+                    txtElem.innerHTML = ans.childNodes[0].nodeValue.charAt(j);
+                    ++tempX; // move to the next column position
+                }
+            }//End of outer for loop
+
+            // Process each 'updown' clue and add it to the crossword puzzle grid
+            for (let i = 0; i < clueDwn.length; i++) {
+                let row = clueDwn[i].getElementsByTagName("row")[0];
+                tempY = Number(row.childNodes[0].nodeValue);
+                let col = clueDwn[i].getElementsByTagName("col")[0];
+                tempX = Number(col.childNodes[0].nodeValue);
+
+                /* Add down answers to crossword puzzle grid */
+                let ans = clueDwn[i].getElementsByTagName("ans")[0];
+                for (let j = 0; j < ans.childNodes[0].nodeValue.length; j++) {
+                    //Put down values
+                    let txtElem = getTxtElem(tempY, tempX);
+                    txtElem.innerHTML = ans.childNodes[0].nodeValue.charAt(j);
+                    ++tempY; // move to the next row position
+                }
+            }//End of outer for loop
+        }//End of function revealAll()
+
+        /*-------------The function clears the result of the submitted crossword.---------------*/
+        function clearAll() {
+            // Ask confirmation to reveal all, if false then return
+            if (!confirm("Confirm clear all.")) return;
+
+            // Process each 'across' clue and add it to the crossword puzzle grid
+            for (let i = 0; i < clueAcr.length; i++) { 
+                let row = clueAcr[i].getElementsByTagName("row")[0]; 
+                tempY = Number(row.childNodes[0].nodeValue); 
+                let col = clueAcr[i].getElementsByTagName("col")[0]; 
+                tempX = Number(col.childNodes[0].nodeValue);
+
+                /* Add across answers to crossword puzzle grid */
+                let ans = clueAcr[i].getElementsByTagName("ans")[0]; 
+                for (let j = 0; j < ans.childNodes[0].nodeValue.length; j++) { 
+                    //Put across values
+                    let txtElem = getTxtElem(tempY, tempX);  
+                    txtElem.innerHTML = ' ';
+                    ++tempX; // move to the next column position
+                }
+            }//End of outer for loop
+
+            // Process each 'updown' clue and add it to the crossword puzzle grid
+            for (let i = 0; i < clueDwn.length; i++) {
+                let row = clueDwn[i].getElementsByTagName("row")[0];
+                tempY = Number(row.childNodes[0].nodeValue);
+                let col = clueDwn[i].getElementsByTagName("col")[0];
+                tempX = Number(col.childNodes[0].nodeValue);
+
+                /* Add down answers to crossword puzzle grid */
+                let ans = clueDwn[i].getElementsByTagName("ans")[0];
+                for (let j = 0; j < ans.childNodes[0].nodeValue.length; j++) {
+                    //Put down values
+                    let txtElem = getTxtElem(tempY, tempX);  
+                    txtElem.innerHTML = ' ';
+                    ++tempY; // move to the next row position
+                }
+            }//End of outer for loop
+        }//End of function clearAll()
+
+    </script>
+</head>
+
+<body onload = "init();loadXML();">
+    <h1>Crossword</h1>
+    <!-- This is the SVG element where the crossword puzzle will be displayed. -->
+    <svg id = "crossWord" height = "416" width = "416"></svg>
+    <!-- This div displays the across and down hints. -->
+    <div class="hint">
+        <h2>Clue: Visible for that row or column when the mouse clicks on a box.</h2>
+        <div id="dispAcross" class="child_div"></div>
+        <div id="dispDown" class="child_div"></div>
+    </div>
+    <div class="btn-clue">
+         <!-- This button checks the current clue of crossword puzzle. -->
+        <button tyte="submit" class="child_btn_clue child_btn" onclick="checkClue()">Check this</button>
+        <!-- This button reveals the current clue of crossword puzzle. -->
+        <button tyte="submit" class="child_btn child_btn_clue" onclick="revealClue()">Reveal this</button>
+        <!-- This button clears the current clue of crossword puzzle. -->
+        <button tyte="submit" class="child_btn child_btn_clue" onclick="clearClue()">Clear this</button>
+    </div>
+    <div>
+        <!-- This button submits the crossword puzzle for checking. -->
+        <button tyte="submit" class="child_btn" onclick="checkAll()">Check all</button>
+        <!-- This button reveals the crossword puzzle solution. -->
+        <button tyte="submit" class="child_btn" onclick="revealAll()">Reveal all</button>
+        <!-- This button clears the crossword puzzle. -->
+        <button tyte="submit" class="child_btn" onclick="clearAll()">Clear all</button>
+    </div>
+</body>
+</html>
