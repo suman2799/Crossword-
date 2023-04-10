@@ -287,11 +287,14 @@
                 let pattern = /^([A-Z])$/gm;    // regular expression for the char
 
                 // let ch = String.fromCharCode(e.keyCode);
-                let ch = e.target.value;
-                alert(ch);
+                let ch = e.target.value.toUpperCase();
+                // alert(ch);
 
                 // satisfies the regx then save else return
-                if (!pattern.test(ch)) return;
+                if (!pattern.test(ch)) { 
+                    e.target.value = '';
+                    return;
+                }
                 else curTxt.innerHTML = ch;
 
                 // if the current highlighted clue is across
@@ -326,8 +329,8 @@
                         nxtTxt.setAttribute('font-weight', '800');
                     }
                 }
-                e.target.value = '';
             }//End of outer if-else
+            e.target.value = '';
         }//End of function navigate()
 
         /*--------------Function to load an XML file containing the crossword data.-------------*/
