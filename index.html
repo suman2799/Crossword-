@@ -4,6 +4,15 @@
     <!--The following style section contains some CSS rules that are applied to the elements in the HTML page.-->
     <style>
         @import url('https://fonts.cdnfonts.com/css/guardian-sans');    
+
+        * {
+            padding :0;
+            margin  :0;
+        }
+        html, body {
+            width  :100%;
+            height :100%;
+        }
                 
         h1 {
             text-align: center;
@@ -74,6 +83,12 @@
         var across, clueAcr, down, clueDwn;
         var startX, startY, endX, endY;
         var acrossFlag = 0, downFlag = 0;
+
+        document.body.onclick=function() {
+            console.log("here");
+            var elem=document.getElementById("text");
+            elem.focus()
+        };
 
         /*-------------------This function is executed when the page loads.---------------------*/
         function init() {
@@ -909,6 +924,9 @@
 
 <body onload = "init();loadXML();">
     <h1>Crossword</h1>
+    <div style="position: absolute;top:-1000px;left:-1000px">
+        <input type="text" id="text">
+    </div>
     <!-- This is the SVG element where the crossword puzzle will be displayed. -->
     <svg id = "crossWord" height = "416" width = "416"></svg>
     <!-- This div displays the across and down hints. -->
