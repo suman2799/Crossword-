@@ -125,6 +125,8 @@
                 }
                 // listen for keydown events for navigating the crossword
                 window.addEventListener('keydown', navigate, true);
+                window.addEventListener('input', navigate, true);
+            
                 // listen for mouse click events for taking current cell
                 crossWord.addEventListener('mousedown', position, true);
         }//End of function init()
