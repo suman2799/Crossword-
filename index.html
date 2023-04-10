@@ -283,15 +283,11 @@
             // Condition: get character input from keyboard
             else { 
                 alert(e.target.value.charCodeAt(0));
-                e.target.value = '';
-                // alert(e.keyCode);
-                // alert(e.charCode);
-                // alert(e.code);
-                // alert(e.key);
-                // alert(e.which);
-                // alert(e.originalEvent.data.charCodeAt(0));
+
                 let pattern = /^([A-Z])$/gm;    // regular expression for the char
-                let ch = String.fromCharCode(e.keyCode);
+
+                // let ch = String.fromCharCode(e.keyCode);
+                let ch = e.target.value;
 
                 // satisfies the regx then save else return
                 if (!pattern.test(ch)) return;
@@ -329,6 +325,7 @@
                         nxtTxt.setAttribute('font-weight', '800');
                     }
                 }
+                e.target.value = '';
             }//End of outer if-else
         }//End of function navigate()
 
