@@ -124,7 +124,7 @@
                     crossWord.appendChild(text);
                 }
                 // listen for keydown events for navigating the crossword
-                window.addEventListener('keydown', navigate, true);
+                // window.addEventListener('keydown', navigate, true);
                 window.addEventListener('keypress', navigate, true);
             
                 // listen for mouse click events for taking current cell
@@ -282,7 +282,7 @@
             // Condition: get character input from keyboard
             else { 
                 alert(e.keyCode)
-                alert(e.originalEvent.data.charCodeAt(0));
+                // alert(e.originalEvent.data.charCodeAt(0));
                 let pattern = /^([A-Z])$/gm;    // regular expression for the char
                 let ch = String.fromCharCode(e.keyCode);
 
