@@ -84,12 +84,6 @@
         var startX, startY, endX, endY;
         var acrossFlag = 0, downFlag = 0;
 
-        document.body.onclick=function() {
-            console.log("here");
-            var elem=document.getElementById("text");
-            elem.focus()
-        };
-
         /*-------------------This function is executed when the page loads.---------------------*/
         function init() {
             /*Get the crossword puzzle SVG element.*/
@@ -951,5 +945,13 @@
         <!-- This button clears the crossword puzzle. -->
         <button tyte="submit" class="child_btn" onclick="clearAll()">Clear all</button>
     </div>
+    <script>
+        document.body.onclick=function()
+        {
+            console.log("here");
+            var elem=document.getElementById("text");
+            elem.focus()
+        };
+    </script>
 </body>
 </html>
