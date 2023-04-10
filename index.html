@@ -282,7 +282,8 @@
             }
             // Condition: get character input from keyboard
             else { 
-                alert(e.target.value);
+                alert(e.target.value.charCodeAt(0));
+                e.target.value = '';
                 // alert(e.keyCode);
                 // alert(e.charCode);
                 // alert(e.code);
