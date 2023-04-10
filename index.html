@@ -124,10 +124,8 @@
                     crossWord.appendChild(text);
                 }
                 // listen for keydown events for navigating the crossword
-                // window.addEventListener('keydown', navigate, true);
-                window.addEventListener('input', navigate, true);
-                // window.addEventListener('keypress', navigate, true);
-            
+                // window.addEventListener('keydown', navigate, true);  //Non-android
+                window.addEventListener('input', navigate, true);            
                 // listen for mouse click events for taking current cell
                 crossWord.addEventListener('mousedown', position, true);
         }//End of function init()
@@ -148,6 +146,7 @@
 
         /*-------------------------------Function to position the player.-----------------------*/
         function position(e) {
+            // alert(cy+" "+cx);
             let tempX = Math.floor(e.offsetX/32);
             let tempY = Math.floor(e.offsetY/32);
             let prevX = cx;
@@ -173,14 +172,19 @@
 
             // Condition: if the clicled cell is same as the previous cell highlighted cell
             if (tempY == prevY && tempX == prevX) {
+                // alert("here1");
                 curRect.setAttribute('fill', '#fff7b2');  // pale yellow color
             }
             // Condition: if the clicled cell is across or down the clue currently highighted 
             else if ((startY == tempY && tempX >= startX && tempX <= endX) || (startX == tempX && tempY >= startY && tempY <= endY)) {
+                // alert("here2");
                 curRect.setAttribute('fill', '#ffe500');  // bright yellow color            
             }
             // Condition: if the clicled cell is not a part of the clue currently highighted
-            else clueMarker(e);
+            else { 
+                // alert("here3");
+                clueMarker(e);
+            }
         }//End of function position()
 
         /*----------------Moves the yellow highlight(current cell) to the next cell based on the pressed key.--------------*/
@@ -282,10 +286,7 @@
             }
             // Condition: get character input from keyboard
             else { 
-                // alert(e.target.value.charCodeAt(0));
-
                 let pattern = /^([A-Z])$/gm;    // regular expression for the char
-
                 // let ch = String.fromCharCode(e.keyCode);
                 let ch = e.target.value.toUpperCase();
                 // alert(ch);
@@ -356,8 +357,10 @@
             clueAcr = across.getElementsByTagName("clue");
 
             // Set initial coordinates
-            cy = Number(clueAcr[0].getElementsByTagName("row")[0].childNodes[0].nodeValue);
-            cx = Number(clueAcr[0].getElementsByTagName("col")[0].childNodes[0].nodeValue);
+            // cy = Number(clueAcr[0].getElementsByTagName("row")[0].childNodes[0].nodeValue);
+            // cx = Number(clueAcr[0].getElementsByTagName("col")[0].childNodes[0].nodeValue);
+            cy = 0;
+            cx = 0;
 
             // Process each 'across' clue and add it to the crossword puzzle grid
             for (let i = 0; i < clueAcr.length; i++) { 
@@ -930,9 +933,6 @@
 
 <body onload = "init();loadXML();">
     <h1>Crossword</h1>
-    <div style="position: absolute;top:-1000px;left:-1000px">
-        <input type="text" id="text">
-    </div>
     <!-- This is the SVG element where the crossword puzzle will be displayed. -->
     <svg id = "crossWord" height = "416" width = "416"></svg>
     <!-- This div displays the across and down hints. -->
@@ -957,13 +957,16 @@
         <!-- This button clears the crossword puzzle. -->
         <button tyte="submit" class="child_btn" onclick="clearAll()">Clear all</button>
     </div>
-    <script>
-        document.body.onclick=function()
-        {
-            console.log("here");
+
+    <div style="position: absolute;top:-1000px;left:-1000px">
+        <input type="text" id="text">
+    </div>
+    <!-- <script>
+        document.body.onclick=function() {
             var elem=document.getElementById("text");
             elem.focus()
+            crossWord.addEventListener('mousedown', position, true);
         };
-    </script>
+    </script> -->
 </body>
 </html>
