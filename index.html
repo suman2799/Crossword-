@@ -282,12 +282,13 @@
             }
             // Condition: get character input from keyboard
             else { 
-                alert(e.target.value.charCodeAt(0));
+                // alert(e.target.value.charCodeAt(0));
 
                 let pattern = /^([A-Z])$/gm;    // regular expression for the char
 
                 // let ch = String.fromCharCode(e.keyCode);
                 let ch = e.target.value;
+                alert(ch);
 
                 // satisfies the regx then save else return
                 if (!pattern.test(ch)) return;
