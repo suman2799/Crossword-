@@ -1,4 +1,4 @@
-# Word Guessing Game
+# Crossword Puzzle
 
 Web-based 13x13 Crossword Puzzle which allows to see Clue Hints, Check, Reveal and Clear a Word or Check, Reveal and Clear all. The Crossword data are fetched from ```crossword.xml```. 
 
